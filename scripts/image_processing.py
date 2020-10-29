@@ -29,3 +29,9 @@ class RenameFile:
             elif len(image_paths) > 1:
                 output_path = self.output_image_path + "/" + f"{self.new_name}" + f"{i+1}" + f".{self.file_type}"
             os.rename(image_path, output_path)
+
+
+class ConvertToWhiteBlack:
+    def __init__(self, input_image_path, output_image_path):
+        self.input_image_path
+        self.output_image_path
