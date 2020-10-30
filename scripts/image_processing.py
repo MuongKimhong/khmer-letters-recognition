@@ -1,8 +1,11 @@
 import os
 from dataclasses import dataclass
-import cv2
+
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 import numpy as np
+import cv2
+
 
 '''
 How to use RenameFile:
@@ -121,3 +124,32 @@ class ResizeImage:
                 output_paths = self.output_image_paths + f"/{self.new_name}" + f"{i+1}" + f".{self.file_type}"
             cv2.imwrite(output_paths, scaled_image)
         print("Done.")
+
+
+class ImageToArray:
+    def __init__(self, image, data_format=None):
+        self.data_format = data_format
+        self.image = image
+
+    def convert_to_array(self):
+        array_image = img_to_array(self.image, data_format=self.data_format)
+        return array_image
+
+
+class DatasetLoader:
+    def __init__(self, image_paths, verbose=-1):
+        self.image_paths = image_paths
+        self.verbose = verbose
+        self.image_labels = []
+        self.images = []
+
+    def load(self):
+        for (i, image_path) in enumerate(self.image_paths):
+            # /path/to/dataset/class/image.jpg
+            image = cv2.imread(image_path)
+            image_label = image_path.split(os.path.sep)[-2]
+            self.image_labels.append(image_label)
+            self.images.append(image)
+            if verbose > 0 and i > 0 and (i + 1) % verbose == 0:
+                print("[INFO] loading image {}/{}".format(i + 1, len(self.image_paths)))
+        return (np.array(self.images), np.array(self.image_labels))
