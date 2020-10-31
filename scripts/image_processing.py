@@ -152,6 +152,6 @@ class DatasetLoader:
             image_label = image_path.split(os.path.sep)[-2]
             self.image_labels.append(image_label)
             self.images.append(image)
-            if verbose > 0 and i > 0 and (i + 1) % verbose == 0:
+            if self.verbose > 0 and i > 0 and (i + 1) % self.verbose == 0:
                 print("[INFO] loading image {}/{}".format(i + 1, len(self.image_paths)))
         return (np.array(self.images), np.array(self.image_labels))
