@@ -73,6 +73,7 @@ class ResizeImage:
         
     def resize(self):
         image_paths = list(paths.list_images(self.input_image_paths))
+        print(image_paths)
         for (i, image_path) in enumerate(image_paths):
             padding_left, padding_right, padding_top, padding_bottom = 0, 0, 0, 0
             print("[INFO] processing image {} ....".format(i+1))
@@ -147,6 +148,7 @@ class DatasetLoader:
         for (i, image_path) in enumerate(self.image_paths):
             # /path/to/dataset/class/image.jpg
             image = cv2.imread(image_path)
+            image = ImageToArray(image).convert_to_array()
             image_label = image_path.split(os.path.sep)[-2]
             self.image_labels.append(image_label)
             self.images.append(image)
