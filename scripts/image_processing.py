@@ -1,6 +1,7 @@
+# standard library import
 import os
 from dataclasses import dataclass
-
+# third party umport
 from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 import numpy as np
@@ -35,7 +36,7 @@ class RenameFile:
                 output_path = self.output_image_path + "/" + f"{self.new_name}" + f"{i+1}" + f".{self.file_type}"
             print("[INFO] renaming image {} ....".format(i+1))
             os.rename(image_path, output_path)
-        print("Done")
+        print("Done.")
 
 
 '''
@@ -73,7 +74,6 @@ class ResizeImage:
         
     def resize(self):
         image_paths = list(paths.list_images(self.input_image_paths))
-        print(image_paths)
         for (i, image_path) in enumerate(image_paths):
             padding_left, padding_right, padding_top, padding_bottom = 0, 0, 0, 0
             print("[INFO] processing image {} ....".format(i+1))
@@ -133,7 +133,9 @@ class ImageToArray:
         self.image = image
 
     def convert_to_array(self):
-        array_image = img_to_array(self.image, data_format=self.data_format)
+        image = self.image
+        data_format = self.data_format
+        array_image = img_to_array(image, data_format=data_format)
         return array_image
 
 
