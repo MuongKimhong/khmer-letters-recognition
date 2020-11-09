@@ -69,13 +69,14 @@ class ResizeImage:
 
     def crop(self, image):
         image_height, image_width = image.shape[:2]
-        cropped_image = image[self.top:(image_height - self.bottom), self.left:(image_width - self.right)]
+        layout = {'top': self.top, 'bottom': self.bottom, 'left': self.left, 'right': self.right}
+        cropped_image = image[layout['top']:(image_height - layout['bottom']), layout['left']:(image_width - layout['right'])]
         return cropped_image
         
     def resize(self):
         image_paths = list(paths.list_images(self.input_image_paths))
         for (i, image_path) in enumerate(image_paths):
-            padding_left, padding_right, padding_top, padding_bottom = 0, 0, 0, 0
+            padding = {'top': 0, 'bottom': 0, 'left': 0, 'right': 0}
             print("[INFO] processing image {} ....".format(i+1))
             image_path = cv2.imread(image_path)
             height, width = image_path.shape[:2]
@@ -101,8 +102,8 @@ class ResizeImage:
                 # scale and pad
                 print("[INFO] resizing image {} ....".format(i+1))
                 scaled_image = cv2.resize(cropped_image, (new_width, new_height), interpolation=interpolation)
-                scaled_image = cv2.copyMakeBorder(scaled_image, padding_top, padding_bottom, padding_left, 
-                                                  padding_right, borderType=cv2.BORDER_CONSTANT, value=self.padding_color)
+                scaled_image = cv2.copyMakeBorder(scaled_image, padding['top'], padding['bottom'], padding['left'], 
+                                                  padding['right'], borderType=cv2.BORDER_CONSTANT, value=self.padding_color)
             else:
                 # Interpolation method
                 if (height > new_height) or (width > new_width):
@@ -117,8 +118,8 @@ class ResizeImage:
                 # scale and pad
                 print("[INFO] resizing image {} ....".format(i+1))
                 scaled_image = cv2.resize(image_path, (new_width, new_height), interpolation=interpolation)
-                scaled_image = cv2.copyMakeBorder(scaled_image, padding_top, padding_bottom, padding_left,
-                                                  padding_right, borderType=cv2.BORDER_CONSTANT, value=self.padding_color)
+                scaled_image = cv2.copyMakeBorder(scaled_image, padding['top'], padding['bottom'], padding['left'],
+                                                  padding['right'], borderType=cv2.BORDER_CONSTANT, value=self.padding_color)
             if len(image_paths) == 1:
                 output_paths = self.output_image_paths + f"/{self.new_name}" + f".{self.file_type}"
             elif len(image_paths) > 1:
@@ -127,16 +128,11 @@ class ResizeImage:
         print("Done.")
 
 
-class ImageToArray:
-    def __init__(self, image, data_format=None):
-        self.data_format = data_format
-        self.image = image
-
-    def convert_to_array(self):
-        image = self.image
-        data_format = self.data_format
-        array_image = img_to_array(image, data_format=data_format)
-        return array_image
+def convert_to_array(image, data_format=None):
+    image = image
+    data_format = data_format
+    array_image = img_to_array(image, data_format=data_format)
+    return array_image
 
 
 class DatasetLoader:
@@ -147,13 +143,16 @@ class DatasetLoader:
         self.images = []
 
     def load(self):
-        for (i, image_path) in enumerate(self.image_paths):
+        images = self.images
+        image_labels = self.image_labels
+        image_paths = self.image_paths
+        for (i, image_path) in enumerate(image_paths):
             # /path/to/dataset/class/image.jpg
             image = cv2.imread(image_path)
-            image = ImageToArray(image).convert_to_array()
+            image = convert_to_array(image)
             image_label = image_path.split(os.path.sep)[-2]
-            self.image_labels.append(image_label)
-            self.images.append(image)
+            image_labels.append(image_label)
+            images.append(image)
             if self.verbose > 0 and i > 0 and (i + 1) % self.verbose == 0:
-                print("[INFO] loading image {}/{}".format(i + 1, len(self.image_paths)))
-        return (np.array(self.images), np.array(self.image_labels))
+                print("[INFO] loading image {}/{}".format(i + 1, len(image_paths)))
+        return (np.array(images), np.array(image_labels))
