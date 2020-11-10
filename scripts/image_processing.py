@@ -72,6 +72,13 @@ class ResizeImage:
         layout = {'top': self.top, 'bottom': self.bottom, 'left': self.left, 'right': self.right}
         cropped_image = image[layout['top']:(image_height - layout['bottom']), layout['left']:(image_width - layout['right'])]
         return cropped_image
+
+    def rotate(self, image, angle):
+        if angle == 90:
+            rotated_image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+        elif angle == 180:
+            rotated_image = cv2.rotate(image, cv2.ROTATE_180)
+        return rotated_image
         
     def resize(self):
         image_paths = list(paths.list_images(self.input_image_paths))
