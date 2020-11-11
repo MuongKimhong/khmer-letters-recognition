@@ -135,8 +135,16 @@ class ResizeImage:
         print("Done.")
 
 
-def flip_image(image, input_path, output_path):
-    pass
+def flip_image(input_path, output_path, new_name, file_type="png"):
+    image_paths = list(paths.list_images(input_path))
+    for (i, image_path) in enumerate(image_paths):
+        image_path = cv2.imread(image_path)
+        print("[INFO] flipping image {}/{}".format(i+1, len(image_paths)))
+        image_path = cv2.flip(image_path, 1)
+        output_path = output_path + f"/{new_name}" + f"{i+1}" + f".{file_type}"
+        cv2.imwrite(output_path, image_path)
+    print("Done.")
+
 
 def convert_to_array(image, data_format=None):
     image = image
