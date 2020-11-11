@@ -79,10 +79,6 @@ class ResizeImage:
         elif angle == 180:
             rotated_image = cv2.rotate(image, cv2.ROTATE_180)
         return rotated_image
-
-    def flip(self, image):
-        flipped_image = cv2.flip(image, 1)
-        return flipped_image
         
     def resize(self):
         image_paths = list(paths.list_images(self.input_image_paths))
@@ -138,6 +134,9 @@ class ResizeImage:
             cv2.imwrite(output_paths, scaled_image)
         print("Done.")
 
+
+def flip_image(image, input_path, output_path):
+    pass
 
 def convert_to_array(image, data_format=None):
     image = image
