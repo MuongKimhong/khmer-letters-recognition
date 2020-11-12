@@ -1,7 +1,7 @@
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-from tensorflow.keras.utils import np_utils
+from tensorflow.keras import utils
 import matplotlib.pyplot as plt
 from imutils import paths
 import numpy as np
@@ -31,7 +31,7 @@ labels = np.array(labels)
 
 print("[INFO] converting labels to vectors ....")
 le = LabelEncoder().fit(labels)
-labels = np_utils.to_categorical(le.transform(labels), 2)
+labels = utils.to_categorical(le.transform(labels), 2)
 
 print("[INFO] computing the class weights ....")
 class_totals = labels.sum(axis=0)
@@ -45,7 +45,7 @@ model = HandNeuralNet.build(width=128, height=128, depth=1, classes=2)
 model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
 print("[INFO] training network ....")
-train = model.fit(trainX, trainY, validation_data=(testX, testY), class_weights=class_weights, batch_size=32, epochs=15, verbose=1)
+train = model.fit(trainX, trainY, validation_data=(testX, testY), batch_size=32, epochs=15, verbose=1)
 
 print("[INFO] saving model ....")
 model.save("model/hand_neural_net.hdf5")
