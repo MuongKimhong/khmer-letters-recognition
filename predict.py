@@ -39,10 +39,12 @@ def main():
             center = [int(moment['m10'] / moment['m00']), int(moment['m01'] / moment['m00'])]
             center_dots.append(center)
             for point in center_dots:
+                print(len(center_dots))
                 cv2.line(frame_clone, (point[0] - 4, point[1] - 4), (point[0], point[1]), (255, 0, 0), 18)
                 print("{} - {}".format(point[0], point[1]))
                 if point[0] < 300 and point[1] < 300:
                     frame_clone = frame
+                    center_dots.clear()
                     print("Cleared")
                     continue
 
