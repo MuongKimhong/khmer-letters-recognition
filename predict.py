@@ -1,9 +1,18 @@
 import cv2
 import numpy as np
 
+print("[INFO] accessing camera .... ")
+print("[INFO] opening camera .... ")
 capture = cv2.VideoCapture(0)
 kernel = np.ones((5, 5), np.uint8)
 center_dots = []
+count = None
+i = 1
+CLEAR_POINTS = {'point1': (0, 0), 'point2': (0, 200), 'point3': (200, 200), 'point4': (200, 0)}
+DRAW_POINTS = {'point1': (800, 100), 'point2': (800, 500), 'point3': (1200, 500), 'point4': (1200, 100)}
+font = cv2.FONT_HERSHEY_SIMPLEX
+thickness = 2
+fontScale = 2
 
 
 def find_red_color(hsv_frame, original_frame):
@@ -16,14 +25,66 @@ def find_red_color(hsv_frame, original_frame):
     return red_mask
 
 
+def draw_clear_area(frame, point0=None, point1=None):
+    if (point0 is not None) and (point1 is not None):
+        if point0 <= 200 and point1 <= 200: 
+            cv2.rectangle(frame, CLEAR_POINTS['point1'], CLEAR_POINTS['point3'], (221, 255, 161), -1)
+            cv2.putText(frame, 'Clear', (20, 120), font, fontScale, (0, 0, 0), thickness, cv2.LINE_AA)
+    else:
+        cv2.rectangle(frame, CLEAR_POINTS['point1'], CLEAR_POINTS['point3'], (0, 255, 0), 5)
+        cv2.putText(frame, 'Clear', (20, 120), font, fontScale, (0, 255, 0), thickness, cv2.LINE_AA)
+    return frame
+
+
+def draw_area(frame):
+    cv2.line(frame, DRAW_POINTS['point1'], DRAW_POINTS['point2'], (0, 255, 0), 6)
+    cv2.line(frame, DRAW_POINTS['point2'], DRAW_POINTS['point3'], (0, 255, 0), 6)
+    cv2.line(frame, DRAW_POINTS['point3'], DRAW_POINTS['point4'], (0, 255, 0), 6)
+    cv2.line(frame, DRAW_POINTS['point4'], DRAW_POINTS['point1'], (0, 255, 0), 6)
+    return frame
+
+
+def draw_save_count(frame):
+    global count
+    if count is not None:
+        cv2.putText(frame, 'image {} saved'.format(count), (250, 120), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    return frame
+
+
+def save_image(path_to_count_file, clear_frame, image_to_save):
+    count_file = open(path_to_count_file, 'r')
+    count = count_file.read()
+    count_file.close()
+    count_file = open(path_to_count_file, 'w')
+    count = int(count) + 1
+    count_file.write(str(count))
+    count_file.close()
+    print("[INFO] saving image {} .... ".format(count))
+    cv2.imwrite("../saved_images/image{}.jpg".format(count), image_to_save)
+    frame_clone = clear_frame
+    center_dots.clear()
+
+
+def create_white_image(size=[300, 300]):
+    image = np.zeros(size, dtype=np.uint8)
+    image.fill(255)
+    return image
+
+
 def main():
+    global i, count
     while True:
         ret, frame = capture.read()
         frame = cv2.flip(frame, 1)
-        frame_clone = frame.copy()
+        clear_frame_clone = frame.copy()
+        clear_frame_clone = draw_clear_area(clear_frame_clone)
+        clear_frame_clone = draw_area(clear_frame_clone)
+        clear_frame_clone = draw_save_count(clear_frame_clone)
+        frame_clone = clear_frame_clone.copy()
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         red_mask = find_red_color(hsv_frame, frame)
 
+        white_image = create_white_image(size=[400, 400])
         # Find contours
         (_, contour, _) = cv2.findContours(red_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         center = None
@@ -33,192 +94,41 @@ def main():
             contour = sorted(contour, key=cv2.contourArea, reverse=True)[0]
             ((x, y), radius) = cv2.minEnclosingCircle(contour)
             # draw circle around contour
-            cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
+            cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 2)
             # Find center of countour
             moment = cv2.moments(contour)
             center = [int(moment['m10'] / moment['m00']), int(moment['m01'] / moment['m00'])]
             center_dots.append(center)
-            for point in center_dots:
-                print(len(center_dots))
-                cv2.line(frame_clone, (point[0] - 4, point[1] - 4), (point[0], point[1]), (255, 0, 0), 18)
-                print("{} - {}".format(point[0], point[1]))
-                if point[0] < 300 and point[1] < 300:
-                    frame_clone = frame
-                    center_dots.clear()
-                    print("Cleared")
-                    continue
+
+        for point in center_dots:
+            if (point[0] > 800 and point[0] < 1200) and (point[1] > 100 and point[1] < 500):
+                new_x_point = point[0] - 800
+                new_y_point = point[1] - 100
+                cv2.circle(frame_clone, (point[0] - 30, point[1] - 30), 12, (255, 255, 0), -1)
+                cv2.circle(white_image, (new_x_point - 30, new_y_point - 30), 12, (0, 0, 0), -1)
+                # cv2.line(frame_clone, (point[0] - 30, point[1] - 30), (point[0], point[1]), (255, 255, 0), 18)
+                # cv2.line(white_image, (new_x_point - 7, new_y_point - 7), (new_x_point, new_y_point), (0, 0, 0), 18)
+
+            if point[0] <= 200 and point[1] <= 200:
+                clear_frame_clone = draw_clear_area(clear_frame_clone, point[0], point[1])
+                frame_clone = clear_frame_clone
+                center_dots.clear()
+                print("Cleared")
+                continue
 
         cv2.imshow("original", frame_clone)
+        cv2.imshow("white", white_image)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = cv2.waitKey(1) & 0xFF
+
+        if key == ord('s'):
+            save_image("count.txt", clear_frame_clone, white_image)
+        elif key == ord('q'):
+            print("break")
             break
+
     cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
     main()
-
-# import numpy as np
-# import cv2
-# from collections import deque
-
-# # Define the upper and lower boundaries for a color to be considered "Blue"
-# blueLower = np.array([100, 60, 60])
-# blueUpper = np.array([140, 255, 255])
-
-# # Define a 5x5 kernel for erosion and dilation
-# kernel = np.ones((5, 5), np.uint8)
-
-# # Setup deques to store separate colors in separate arrays
-# bpoints = [deque(maxlen=512)]
-# gpoints = [deque(maxlen=512)]
-# rpoints = [deque(maxlen=512)]
-# ypoints = [deque(maxlen=512)]
-
-# bindex = 0
-# gindex = 0
-# rindex = 0
-# yindex = 0
-
-# colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255)]
-# colorIndex = 0
-
-# # Setup the Paint interface
-# paintWindow = np.zeros((471, 636, 3)) + 255
-# paintWindow = cv2.rectangle(paintWindow, (40, 1), (140, 65), (0, 0, 0), 2)
-# paintWindow = cv2.rectangle(paintWindow, (160, 1), (255, 65), colors[0], -1)
-# paintWindow = cv2.rectangle(paintWindow, (275, 1), (370, 65), colors[1], -1)
-# paintWindow = cv2.rectangle(paintWindow, (390, 1), (485, 65), colors[2], -1)
-# paintWindow = cv2.rectangle(paintWindow, (505, 1), (600, 65), colors[3], -1)
-# cv2.putText(paintWindow, "CLEAR ALL", (49, 33),
-#             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
-# cv2.putText(paintWindow, "BLUE", (185, 33), cv2.FONT_HERSHEY_SIMPLEX,
-#             0.5, (255, 255, 255), 2, cv2.LINE_AA)
-# cv2.putText(paintWindow, "GREEN", (298, 33),
-#             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-# cv2.putText(paintWindow, "RED", (420, 33), cv2.FONT_HERSHEY_SIMPLEX,
-#             0.5, (255, 255, 255), 2, cv2.LINE_AA)
-# cv2.putText(paintWindow, "YELLOW", (520, 33),
-#             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150, 150, 150), 2, cv2.LINE_AA)
-
-# cv2.namedWindow('Paint', cv2.WINDOW_AUTOSIZE)
-
-# # Load the video
-# camera = cv2.VideoCapture(0)
-
-# # Keep looping
-# while True:
-#     # Grab the current paintWindow
-#     (grabbed, frame) = camera.read()
-#     frame = cv2.flip(frame, 1)
-#     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-#     # Add the coloring options to the frame
-#     frame = cv2.rectangle(frame, (40, 1), (140, 65), (122, 122, 122), -1)
-#     frame = cv2.rectangle(frame, (160, 1), (255, 65), colors[0], -1)
-#     frame = cv2.rectangle(frame, (275, 1), (370, 65), colors[1], -1)
-#     frame = cv2.rectangle(frame, (390, 1), (485, 65), colors[2], -1)
-#     frame = cv2.rectangle(frame, (505, 1), (600, 65), colors[3], -1)
-#     cv2.putText(frame, "CLEAR ALL", (49, 33),
-#                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-#     cv2.putText(frame, "BLUE", (185, 33), cv2.FONT_HERSHEY_SIMPLEX,
-#                 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-#     cv2.putText(frame, "GREEN", (298, 33), cv2.FONT_HERSHEY_SIMPLEX,
-#                 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-#     cv2.putText(frame, "RED", (420, 33), cv2.FONT_HERSHEY_SIMPLEX,
-#                 0.5, (255, 255, 255), 2, cv2.LINE_AA)
-#     cv2.putText(frame, "YELLOW", (520, 33), cv2.FONT_HERSHEY_SIMPLEX,
-#                 0.5, (150, 150, 150), 2, cv2.LINE_AA)
-
-#     # Check to see if we have reached the end of the video
-#     if not grabbed:
-#         break
-
-#     # Determine which pixels fall within the blue boundaries and then blur the binary image
-#     blueMask = cv2.inRange(hsv, blueLower, blueUpper)
-#     blueMask = cv2.erode(blueMask, kernel, iterations=2)
-#     blueMask = cv2.morphologyEx(blueMask, cv2.MORPH_OPEN, kernel)
-#     blueMask = cv2.dilate(blueMask, kernel, iterations=1)
-
-#     # Find contours in the image
-#     (_, cnts, _) = cv2.findContours(blueMask.copy(), cv2.RETR_EXTERNAL,
-#                                     cv2.CHAIN_APPROX_SIMPLE)
-#     center = None
-
-#     # Check to see if any contours were found
-#     if len(cnts) > 0:
-#     	# Sort the contours and find the largest one -- we
-#     	# will assume this contour correspondes to the area of the bottle cap
-#         cnt = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
-#         # Get the radius of the enclosing circle around the found contour
-#         ((x, y), radius) = cv2.minEnclosingCircle(cnt)
-#         # Draw the circle around the contour
-#         cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
-#         # Get the moments to calculate the center of the contour (in this case Circle)
-#         M = cv2.moments(cnt)
-#         center = (int(M['m10'] / M['m00']), int(M['m01'] / M['m00']))
-
-#         if center[1] <= 65:
-#             if 40 <= center[0] <= 140:  # Clear All
-#                 bpoints = [deque(maxlen=512)]
-#                 gpoints = [deque(maxlen=512)]
-#                 rpoints = [deque(maxlen=512)]
-#                 ypoints = [deque(maxlen=512)]
-
-#                 bindex = 0
-#                 gindex = 0
-#                 rindex = 0
-#                 yindex = 0
-
-#                 paintWindow[67:, :, :] = 255
-#             elif 160 <= center[0] <= 255:
-#                 colorIndex = 0  # Blue
-#             elif 275 <= center[0] <= 370:
-#                 colorIndex = 1  # Green
-#             elif 390 <= center[0] <= 485:
-#                 colorIndex = 2  # Red
-#             elif 505 <= center[0] <= 600:
-#                 colorIndex = 3  # Yellow
-#         else:
-#             if colorIndex == 0:
-#                 bpoints[bindex].appendleft(center)
-#             elif colorIndex == 1:
-#                 gpoints[gindex].appendleft(center)
-#             elif colorIndex == 2:
-#                 rpoints[rindex].appendleft(center)
-#             elif colorIndex == 3:
-#                 ypoints[yindex].appendleft(center)
-#     # Append the next deque when no contours are detected (i.e., bottle cap reversed)
-#     else:
-#         bpoints.append(deque(maxlen=512))
-#         bindex += 1
-#         gpoints.append(deque(maxlen=512))
-#         gindex += 1
-#         rpoints.append(deque(maxlen=512))
-#         rindex += 1
-#         ypoints.append(deque(maxlen=512))
-#         yindex += 1
-
-#     # Draw lines of all the colors (Blue, Green, Red and Yellow)
-#     points = [bpoints, gpoints, rpoints, ypoints]
-#     for i in range(len(points)):
-#         for j in range(len(points[i])):
-#             for k in range(1, len(points[i][j])):
-#                 if points[i][j][k - 1] is None or points[i][j][k] is None:
-#                     continue
-#                 cv2.line(frame, points[i][j][k - 1],
-#                          points[i][j][k], (0, 0, 0), 5)
-#                 cv2.line(paintWindow, points[i][j]
-#                          [k - 1], points[i][j][k], (0, 0, 0), 2)
-
-#     # Show the frame and the paintWindow image
-#     cv2.imshow("Tracking", frame)
-#     cv2.imshow("Paint", paintWindow)
-
-# # If the 'q' key is pressed, stop the loop
-#     if cv2.waitKey(1) & 0xFF == ord("q"):
-#         break
-
-# # Cleanup the camera and close any open windows
-# camera.release()
-# cv2.destroyAllWindows()
