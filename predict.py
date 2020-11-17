@@ -15,14 +15,14 @@ thickness = 2
 fontScale = 2
 
 
-def find_red_color(hsv_frame, original_frame):
+def find_blue_color(hsv_frame, original_frame):
     low_red = np.array([110, 100, 20])
     high_red = np.array([130, 255, 255])
-    red_mask = cv2.inRange(hsv_frame, low_red, high_red)
-    red_mask = cv2.erode(red_mask, kernel, iterations=2)
-    red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, kernel)
-    red_mask = cv2.dilate(red_mask, kernel, iterations=1)
-    return red_mask
+    blue_mask = cv2.inRange(hsv_frame, low_red, high_red)
+    blue_mask = cv2.erode(blue_mask, kernel, iterations=2)
+    blue_mask = cv2.morphologyEx(blue_mask, cv2.MORPH_OPEN, kernel)
+    blue_mask = cv2.dilate(blue_mask, kernel, iterations=1)
+    return blue_mask
 
 
 def draw_clear_area(frame, point0=None, point1=None):
@@ -82,7 +82,7 @@ def main():
         clear_frame_clone = draw_save_count(clear_frame_clone)
         frame_clone = clear_frame_clone.copy()
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        red_mask = find_red_color(hsv_frame, frame)
+        red_mask = find_blue_color(hsv_frame, frame)
 
         white_image = create_white_image(size=[400, 400])
         # Find contours
