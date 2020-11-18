@@ -1,13 +1,13 @@
 import cv2
 import numpy as np
 
-print("[INFO] accessing camera .... ")
-print("[INFO] opening camera .... ")
 capture = cv2.VideoCapture(0)
+key = cv2.waitKey(1) & 0xFF
 kernel = np.ones((5, 5), np.uint8)
 center_dots = []
 count = None
 i = 1
+play_frame = {'Bool': True, 'count': 1}
 CLEAR_POINTS = {'point1': (0, 0), 'point2': (0, 200), 'point3': (200, 200), 'point4': (200, 0)}
 DRAW_POINTS = {'point1': (800, 100), 'point2': (800, 500), 'point3': (1200, 500), 'point4': (1200, 100)}
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -52,6 +52,7 @@ def draw_save_count(frame):
 
 
 def save_image(path_to_count_file, clear_frame, image_to_save):
+    global count
     count_file = open(path_to_count_file, 'r')
     count = count_file.read()
     count_file.close()
@@ -60,7 +61,7 @@ def save_image(path_to_count_file, clear_frame, image_to_save):
     count_file.write(str(count))
     count_file.close()
     print("[INFO] saving image {} .... ".format(count))
-    cv2.imwrite("../saved_images/image{}.jpg".format(count), image_to_save)
+    cv2.imwrite("../khmer_letter_dataset/khmer_letters_air/2_khor_original/khor{}.jpg".format(count), image_to_save)
     frame_clone = clear_frame
     center_dots.clear()
 
@@ -72,7 +73,9 @@ def create_white_image(size=[300, 300]):
 
 
 def main():
-    global i, count
+    print("[INFO] accessing camera .... ")
+    print("[INFO] opening camera .... ")
+    global i, count, key, play_frame
     while True:
         ret, frame = capture.read()
         frame = cv2.flip(frame, 1)
@@ -82,11 +85,11 @@ def main():
         clear_frame_clone = draw_save_count(clear_frame_clone)
         frame_clone = clear_frame_clone.copy()
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        red_mask = find_blue_color(hsv_frame, frame)
+        blue_mask = find_blue_color(hsv_frame, frame)
 
         white_image = create_white_image(size=[400, 400])
         # Find contours
-        (_, contour, _) = cv2.findContours(red_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        (_, contour, _) = cv2.findContours(blue_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         center = None
 
         # Check to see if any contours were found
@@ -95,25 +98,27 @@ def main():
             ((x, y), radius) = cv2.minEnclosingCircle(contour)
             # draw circle around contour
             cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 2)
+            cv2.circle(frame_clone, (int(x), int(y)), int(radius), (0, 255, 0), 2)
             # Find center of countour
             moment = cv2.moments(contour)
             center = [int(moment['m10'] / moment['m00']), int(moment['m01'] / moment['m00'])]
-            center_dots.append(center)
+            cv2.circle(frame_clone, (center[0], center[1]), 12, (255, 255, 255), -1)
+            if play_frame['Bool']:
+                center_dots.append(center)
 
         for point in center_dots:
             if (point[0] > 800 and point[0] < 1200) and (point[1] > 100 and point[1] < 500):
                 new_x_point = point[0] - 800
                 new_y_point = point[1] - 100
-                cv2.circle(frame_clone, (point[0] - 30, point[1] - 30), 12, (255, 255, 0), -1)
-                cv2.circle(white_image, (new_x_point - 30, new_y_point - 30), 12, (0, 0, 0), -1)
+                frame_clone = cv2.circle(frame_clone, (point[0] - 5, point[1] - 5), 12, (255, 255, 0), -1)
+                white_image = cv2.circle(white_image, (new_x_point - 5, new_y_point - 5), 12, (0, 0, 0), -1)
                 # cv2.line(frame_clone, (point[0] - 30, point[1] - 30), (point[0], point[1]), (255, 255, 0), 18)
                 # cv2.line(white_image, (new_x_point - 7, new_y_point - 7), (new_x_point, new_y_point), (0, 0, 0), 18)
-
-            if point[0] <= 200 and point[1] <= 200:
+            if (point[0] <= 200 and point[1] <= 200):
                 clear_frame_clone = draw_clear_area(clear_frame_clone, point[0], point[1])
                 frame_clone = clear_frame_clone
                 center_dots.clear()
-                print("Cleared")
+                print("Image's cleared")
                 continue
 
         cv2.imshow("original", frame_clone)
@@ -123,12 +128,29 @@ def main():
 
         if key == ord('s'):
             save_image("count.txt", clear_frame_clone, white_image)
+        elif key == ord('a'):
+            play_frame['count'] = play_frame['count'] + 1
+            if play_frame['count'] % 2 == 0:
+                play_frame['Bool'] = False
+                print("[INFO] paused capture drawing line .... ")
+            elif play_frame['count'] % 2 == 1:
+                play_frame['Bool'] = True
+                print("[INFO] resumed capture drawing line .... ")
+        elif key == ord('c'):
+            for point in center_dots:
+                clear_frame_clone = draw_clear_area(clear_frame_clone, point[0], point[1])
+                frame_clone = clear_frame_clone
+                center_dots.clear()
+                print("Image's cleared")
+                break
         elif key == ord('q'):
-            print("break")
+            print("[INFO] closing camera .... ")
+            print("Closed")
             break
 
     cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
+    print("[INFO] Runing predict module .... ")
     main()

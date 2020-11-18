@@ -147,7 +147,7 @@ class DatasetLoader:
         self.image_paths = image_paths
         self.verbose = verbose
         self.image_labels = []
-        self.images = []
+        self.images = np.empty(shape=(400, 128, 128, 3))
 
     def load(self):
         images = self.images
@@ -159,7 +159,7 @@ class DatasetLoader:
             image = convert_to_array(image)
             image_label = image_path.split(os.path.sep)[-2]
             image_labels.append(image_label)
-            images.append(image)
+            images[i] = image
             if self.verbose > 0 and i > 0 and (i + 1) % self.verbose == 0:
                 print("[INFO] loading image {}/{}".format(i + 1, len(image_paths)))
-        return (np.array(images), np.array(image_labels))
+        return (images, np.array(image_labels))
