@@ -143,11 +143,12 @@ def convert_to_array(image, data_format=None):
 
 
 class DatasetLoader:
-    def __init__(self, image_paths, verbose=-1):
+    def __init__(self, image_paths, shape, verbose=-1):
         self.image_paths = image_paths
         self.verbose = verbose
         self.image_labels = []
-        self.images = np.empty(shape=(400, 128, 128, 3))
+        self.shape = shape
+        self.images = np.empty(self.shape) # shape = (400, 128, 128, 3) (number of images, width, height, channels)
 
     def load(self):
         images = self.images
