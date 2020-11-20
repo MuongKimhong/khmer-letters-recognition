@@ -165,15 +165,3 @@ class DatasetLoader:
             if self.verbose > 0 and i > 0 and (i + 1) % self.verbose == 0:
                 print("[INFO] loading image {}/{}".format(i + 1, len(image_paths)))
         return (images, np.array(image_labels))
-
-    @staticmethod
-    def load_for_predict(image, image_path, shape):
-        image_list = []
-        image_label_list = []
-        image = cv2.imread(image)
-        image = convert_to_array(image)
-        image_list.append(image)
-        image_label = image_path.split(os.path.sep)[-2]
-        image_label_list.append(image_label)
-        print("[INFO] image loaded .... ")
-        return (np.array(image_list), np.array(image_label_list))
