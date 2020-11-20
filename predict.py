@@ -1,5 +1,10 @@
+import os
 import cv2
 import numpy as np
+from tensorflow.keras.models import load_model
+from imutils import paths
+
+from scripts.image_processing import ResizeImage, DatasetLoader, convert_to_array
 
 capture = cv2.VideoCapture(0)
 key = cv2.waitKey(1) & 0xFF
@@ -51,7 +56,7 @@ def draw_save_count(frame):
     return frame
 
 
-def save_image(path_to_count_file, clear_frame, image_to_save):
+def save_image(path_to_count_file, clear_frame, image_to_save, save_path):
     global count
     count_file = open(path_to_count_file, 'r')
     count = count_file.read()
@@ -61,9 +66,42 @@ def save_image(path_to_count_file, clear_frame, image_to_save):
     count_file.write(str(count))
     count_file.close()
     print("[INFO] saving image {} .... ".format(count))
-    cv2.imwrite("../khmer_letter_dataset/khmer_letters_air/2_khor_original/khor{}.jpg".format(count), image_to_save)
+    # cv2.imwrite("../khmer_letter_dataset/khmer_letters_air/3_kur_original/kur{}.jpg".format(count), image_to_save)
+    cv2.imwrite(save_path + "{}.jpg".format(count), image_to_save)
     frame_clone = clear_frame
     center_dots.clear()
+
+
+def predict_image(model_path, class_labels, clear_frame, image_to_save):
+    all_paths = {
+        'save_path': "predict_images/input_images/image",
+        'image_for_predict_path': 'predict_images/input_images',
+        'count_file_path': "count_text/input_predict_count.txt",
+        'model_path': model_path,
+    }
+    # save image to "predict_images/input_images/" directory
+    save_image(all_paths['count_file_path'], clear_frame, image_to_save, all_paths['save_path'])
+
+    print("[INFO] processig image .... ")
+    image_path = list(paths.list_images(all_paths['image_for_predict_path']))
+    image_path.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
+    image_path = image_path[-1]
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (128, 128))
+    image = image.astype("float")/ 255.0
+    image = convert_to_array(image)
+    image = np.expand_dims(image, axis=0)
+    print("[INFO] loading model .... ")
+    pre_trained_model = load_model(all_paths['model_path'])
+    print("[INFO] predicting .... ")
+    (kor, khor, kur) = pre_trained_model.predict(image)[0]
+    
+    if (kor > khor) and (kor > kur):
+        print("you wrote ក")
+    elif (khor > kor) and (khor > kur):
+        print("Khor")
+    elif (kur > kor) and (kur > khor):
+        print("Kur")
 
 
 def create_white_image(size=[300, 300]):
@@ -127,7 +165,12 @@ def main():
         key = cv2.waitKey(1) & 0xFF
 
         if key == ord('s'):
-            save_image("count.txt", clear_frame_clone, white_image)
+            save_images_path = "../khmer_letter_dataset/khmer_letters_air/3_kur_original/kur"
+            save_image("count_text/count.txt", clear_frame_clone, white_image, save_images_path)
+        elif key == ord('p'):
+            model_path = "model/k_neural_net_air.hdf5"
+            class_labels = ['kor', 'khor', 'kur']
+            predict_image(model_path, class_labels, clear_frame_clone, white_image)
         elif key == ord('a'):
             play_frame['count'] = play_frame['count'] + 1
             if play_frame['count'] % 2 == 0:
