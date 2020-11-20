@@ -73,12 +73,18 @@ def save_image(path_to_count_file, clear_frame, image_to_save, save_path):
 
 
 def predict_image(model_path, class_labels, clear_frame, image_to_save):
+    class_variables = {}
     all_paths = {
         'save_path': "predict_images/input_images/image",
         'image_for_predict_path': 'predict_images/input_images',
         'count_file_path': "count_text/input_predict_count.txt",
         'model_path': model_path,
     }
+    for label in class_labels:
+        class_variables[label] = None
+
+    class_variables_list = list(class_variables)
+
     # save image to "predict_images/input_images/" directory
     save_image(all_paths['count_file_path'], clear_frame, image_to_save, all_paths['save_path'])
 
@@ -95,13 +101,9 @@ def predict_image(model_path, class_labels, clear_frame, image_to_save):
     pre_trained_model = load_model(all_paths['model_path'])
     print("[INFO] predicting .... ")
     (kor, khor, kur) = pre_trained_model.predict(image)[0]
-    
-    if (kor > khor) and (kor > kur):
-        print("you wrote ក")
-    elif (khor > kor) and (khor > kur):
-        print("Khor")
-    elif (kur > kor) and (kur > khor):
-        print("Kur")
+    for (i, probability) in enumerate(pre_trained_model.predict(image)[0]):
+        class_variables[class_variables_list[i]] = probability
+    print("You wrote {}".format(max(class_variables)))
 
 
 def create_white_image(size=[300, 300]):
