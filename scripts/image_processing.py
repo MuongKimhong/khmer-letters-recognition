@@ -1,6 +1,7 @@
 # standard library import
 import os
 from dataclasses import dataclass
+
 # third party umport
 from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
@@ -148,7 +149,7 @@ class DatasetLoader:
         self.verbose = verbose
         self.image_labels = []
         self.shape = shape
-        self.images = np.empty(self.shape) # shape = (400, 128, 128) (number of images, width, height, channels)
+        self.images = np.empty(self.shape, dtype="uint8") # shape = (400, 128, 128) (number of images, width, height, channels)
 
     def load(self):
         images = self.images

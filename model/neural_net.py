@@ -17,24 +17,46 @@ class KNeuralNet:
         model.add(layers.Conv2D(filters=32, kernel_size=(3, 3), strides=(1, 1), padding="same"))
         model.add(layers.Activation("relu"))
         # third layer
-        model.add(layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Conv2D(filters=32, kernel_size=(3, 3), strides=(1, 1), padding="same"))
         model.add(layers.Activation("relu"))
         # fourth layer
-        model.add(layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding="same"))
         model.add(layers.Activation("relu"))
-        model.add(layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
         # fifth layer
+        model.add(layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Activation("relu"))
+        # sixth layer
+        model.add(layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Activation("relu"))
+        # seventh layer
+        model.add(layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Activation('relu'))
+        # layer 8
         model.add(layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding="same"))
         model.add(layers.Activation("relu"))
         model.add(layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-        # sixth layer
+        # layer 9
         model.add(layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding="same"))
         model.add(layers.Activation("relu"))
-        model.add(layers.MaxPooling2D(pool_size=(2, 2), strides=(1, 1)))
-        # seventh layer
+        # model.add(layers.MaxPooling2D(pool_size=(2, 2), strides=(1, 1)))
+        # layer 10
+        model.add(layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Activation("relu"))
+        # model.add(layers.MaxPooling2D(pool_size=(2, 2), strides=(1, 1)))
+        # layer 11
+        model.add(layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Activation('relu'))
+        # model.add(layers.MaxPooling2D(pool_size=(2, 2), strides=(1, 1)))
+        # layer 12
+        model.add(layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Activation('relu'))
+        # layer 13
+        model.add(layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding="same"))
+        model.add(layers.Activation('relu'))
+        model.add(layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # layer 14
         model.add(layers.Flatten())
-        # eighth layer
+        # layer 15
         model.add(layers.Dense(classes))
-        # last layer
         model.add(layers.Activation("softmax"))
         return model
