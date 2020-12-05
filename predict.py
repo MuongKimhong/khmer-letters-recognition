@@ -147,7 +147,7 @@ class PredictImage:
         image_path.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
         # get the last image
         image_path = image_path[-1] 
-        image = cv2.imread(image_path)
+        image = cv2.imread(image_path, 0)
         image = cv2.resize(image, (128, 128))
         # convert to gray scale if draw with hand
         # if mode == "hand": image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -213,7 +213,7 @@ def main():
             save_images_path = "../khmer_letter_dataset/khmer_letters_air/original/5_ngur_original/ngur"
             save_image("count_text/count.txt", clear_frame_clone, white_image, save_images_path)
         elif key == ord('p'):
-            model_path = "model/k_neural_net__on_air.hdf5"
+            model_path = "model/khmer_letters_on_air.hdf5"
             class_labels = ['kor', 'khor', 'kur', 'khur']
             predict = PredictImage()
             predict.predict_image(model_path, class_labels, clear_frame_clone, white_image)
