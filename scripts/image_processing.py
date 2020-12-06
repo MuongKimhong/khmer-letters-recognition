@@ -67,7 +67,8 @@ class ImageProcessing:
 
                 print("[INFO] resizing images {}/{}".format(index+1, len(self.image_paths)))
                 resized_image = cv2.resize(cropped_image, (new_width, new_height), interpolation=interpolation)
-                resized_image = cv2.copyMakeBorder(resized_image, padding['top'], padding['bottom'], padding['left'], padding['right'], borderType=cv2.BORDER_CONSTANT)
+                resized_image = cv2.copyMakeBorder(resized_image, padding['top'], padding['bottom'], padding['left'], padding['right'], 
+                                                   borderType=cv2.BORDER_CONSTANT)
             elif not crop_image:
                 if (height > new_height) or (width > new_width):
                     interpolation = cv2.INTER_AREA
@@ -80,7 +81,8 @@ class ImageProcessing:
                     padding_color = [padding_color] * 3
                 
                 resized_image = cv2.resize(image, (new_width, new_height), interpolation=interpolation)
-                resized_image = cv2.copyMakeBorder(resized_image, padding['top'], padding['bottom'], padding['left'], padding['right'], borderType=cv2.BORDER_CONSTANT, value=padding_color)
+                resized_image = cv2.copyMakeBorder(resized_image, padding['top'], padding['bottom'], padding['left'], padding['right'], 
+                                                   borderType=cv2.BORDER_CONSTANT, value=padding_color)
 
             if len(self.image_paths) == 1:
                 output_path = self.output_img_path + f"/{new_name}" + f".{file_type}"
@@ -97,7 +99,7 @@ def dataset_loader(image_paths, shape):
         print("[INFO] loading image {}/{}".format(index+1, len(image_paths)))
         image = cv2.imread(image_path, 0)
         image = img_to_array(image)
-        image_label = image_pths.split(os.path.sep)[-2]
+        image_label = image_paths.split(os.path.sep)[-2]
         image_labels.append(image_label)
         images[index] = image
     return (images, np.array(image_labels))
