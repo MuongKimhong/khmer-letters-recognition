@@ -2,12 +2,12 @@
 import os
 import argparse
 # third party import
+from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 from imutils import paths
 import numpy as np
 import cv2
-# local import
-from scripts.image_processing import convert_to_array
+
 
 # argument
 ap = argparse.ArgumentParser()
@@ -21,6 +21,8 @@ i = 0
 center_dots = [] # use to store drawing coordinates
 count = None # use to count saved image in save function
 label = None # use to draw predicted label in PredictImage class
+show_count = True
+option_color = {'a': (0, 155, 0), 's': (0, 155, 0), 'c': (0, 155, 0), 'p': (0, 155, 0)}
 play_frame = {'Bool': False, 'count': 1} # use to define when to capture drawing
 CLEAR_POINTS = {'point1': (0, 0), 'point2': (0, 200), 'point3': (200, 200), 'point4': (200, 0)}
 DRAW_POINTS = {'point1': (800, 100), 'point2': (800, 500), 'point3': (1200, 500), 'point4': (1200, 100)}
@@ -39,17 +41,6 @@ def find_blue_color(hsv_frame, original_frame):
     return blue_mask
 
 
-def draw_clear_area(frame, point0=None, point1=None):
-    if (point0 is not None) and (point1 is not None):
-        if point0 <= 200 and point1 <= 200: 
-            cv2.rectangle(frame, CLEAR_POINTS['point1'], CLEAR_POINTS['point3'], (221, 255, 161), -1)
-            cv2.putText(frame, 'Clear', (20, 120), font, fontScale, (0, 0, 0), thickness, cv2.LINE_AA)
-    else:
-        cv2.rectangle(frame, CLEAR_POINTS['point1'], CLEAR_POINTS['point3'], (0, 255, 0), 5)
-        cv2.putText(frame, 'Clear', (20, 120), font, fontScale, (0, 255, 0), thickness, cv2.LINE_AA)
-    return frame
-
-
 def draw_area(frame):
     cv2.line(frame, DRAW_POINTS['point1'], DRAW_POINTS['point2'], (0, 255, 0), 6)
     cv2.line(frame, DRAW_POINTS['point2'], DRAW_POINTS['point3'], (0, 255, 0), 6)
@@ -58,10 +49,20 @@ def draw_area(frame):
     return frame
 
 
+def draw_options(frame):
+    global option_color
+    cv2.putText(frame, '- Press a to write or stop', (50, 50), font, 1, option_color['a'], 2, cv2.LINE_AA)
+    cv2.putText(frame, '- Press c to clear screen', (50, 100), font, 1, option_color['c'], 2, cv2.LINE_AA)
+    cv2.putText(frame, '- Press s to save image', (50, 150), font, 1, option_color['s'], 2, cv2.LINE_AA)
+    cv2.putText(frame, '- Press p to predict', (50, 200), font, 1, option_color['p'], 2, cv2.LINE_AA)
+    cv2.putText(frame, '- Press q to exit', (50, 250), font, 1, (0, 155, 0), 2, cv2.LINE_AA)
+    return frame
+
+
 def draw_save_count(frame):
-    global count
-    if count is not None:
-        cv2.putText(frame, 'image {} saved'.format(count), (250, 120), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    global count, show_count
+    if (count is not None) and show_count:
+        cv2.putText(frame, 'image {} saved'.format(count), (250, 120), font, 1, (0, 255, 0), 1, cv2.LINE_AA)
     return frame
 
 
@@ -152,7 +153,7 @@ class PredictImage:
         # convert to gray scale if draw with hand
         # if mode == "hand": image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         image = image.astype("float") / 255.0
-        image = convert_to_array(image)
+        image = img_to_array(image)
         image = np.expand_dims(image, axis=0)
 
         print("[INFO] loading model .... ")
@@ -172,7 +173,7 @@ class PredictImage:
     def draw_predict_label(self, frame):
         global label
         if label is not None:   
-            cv2.putText(frame, 'You wrote {}'.format(label), (250, 200), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, 'You wrote {}'.format(label), (890, 80), font, 1, (135, 0, 0), 2, cv2.LINE_AA)
         return frame
 
 
@@ -185,13 +186,14 @@ def create_white_image(size=[300, 300]):
 def main():
     print("[INFO] accessing camera .... ")
     print("[INFO] opening camera .... ")
-    global i, count, key, play_frame
+    global i, count, key, play_frame, show_count,  option_color
     while True:
         ret, frame = capture.read()
         frame = cv2.flip(frame, 1)
         clear_frame_clone = frame.copy()
         # clear_frame_clone = draw_clear_area(clear_frame_clone)
         clear_frame_clone = draw_area(clear_frame_clone)
+        clear_frame_clone = draw_options(clear_frame_clone)
         clear_frame_clone = draw_save_count(clear_frame_clone)
         clear_frame_clone = PredictImage().draw_predict_label(clear_frame_clone)
         frame_clone = clear_frame_clone.copy()
@@ -210,18 +212,35 @@ def main():
 
         # keys events
         if key == ord('s'):
+            option_color['s'] = (0, 255, 0)
+            option_color['a'] = (0, 155, 0)
+            option_color['c'] = (0, 155, 0)
+            option_color['p'] = (0, 155, 0)
+            show_count = True
             save_images_path = "../khmer_letter_dataset/khmer_letters_air/original/5_ngur_original/ngur"
             save_image("count_text/count.txt", clear_frame_clone, white_image, save_images_path)
         elif key == ord('p'):
+            option_color['p'] = (0, 255, 0)
+            option_color['s'] = (0, 155, 0)
+            option_color['a'] = (0, 155, 0)
+            option_color['c'] = (0, 155, 0)
+            show_count = False
             model_path = "model/khmer_letters_on_air.hdf5"
             class_labels = ['kor', 'khor', 'kur', 'khur']
             predict = PredictImage()
             predict.predict_image(model_path, class_labels, clear_frame_clone, white_image)
         elif key == ord('a'):
+            option_color['a'] = (0, 255, 0)
+            option_color['c'] = (0, 155, 0)
+            option_color['p'] = (0, 155, 0)
+            option_color['s'] = (0, 155, 0)
             capture_drawing()
         elif key == ord('c'):
+            option_color['c'] = (0, 255, 0)
+            option_color['a'] = (0, 155, 0)
+            option_color['s'] = (0, 155, 0)
+            option_color['p'] = (0, 155, 0)
             for point in center_dots:
-                clear_frame_clone = draw_clear_area(clear_frame_clone, point[0], point[1])
                 frame_clone = clear_frame_clone
                 center_dots.clear()
                 print("Image's cleared")
