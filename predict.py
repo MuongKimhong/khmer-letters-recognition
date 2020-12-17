@@ -1,6 +1,7 @@
 # standard library import
 import os
 import argparse
+
 # third party import
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
@@ -8,32 +9,34 @@ from imutils import paths
 import numpy as np
 import cv2
 
-
 # argument
 ap = argparse.ArgumentParser()
-ap.add_argument("-m", "--mode", help="detect mode")
+ap.add_argument("-m", "--mode", help="detect mode", required=True)
 args = vars(ap.parse_args())
 
 capture = cv2.VideoCapture(0)
 key = cv2.waitKey(1) & 0xFF
+
 kernel = np.ones((5, 5), np.uint8)
+
 i = 0
 center_dots = [] # use to store drawing coordinates
 count = None # use to count saved image in save function
 label = None # use to draw predicted label in PredictImage class
 show_count = True
-option_color = {'a': (0, 155, 0), 's': (0, 155, 0), 'c': (0, 155, 0), 'p': (0, 155, 0)}
 play_frame = {'Bool': False, 'count': 1} # use to define when to capture drawing
+OPTION_COLORS = {'a': (0, 155, 0), 's': (0, 155, 0), 'c': (0, 155, 0), 'p': (0, 155, 0)}
 CLEAR_POINTS = {'point1': (0, 0), 'point2': (0, 200), 'point3': (200, 200), 'point4': (200, 0)}
 DRAW_POINTS = {'point1': (800, 100), 'point2': (800, 500), 'point3': (1200, 500), 'point4': (1200, 100)}
+
 font = cv2.FONT_HERSHEY_SIMPLEX
 thickness = 2
 fontScale = 2
 
 
 def find_blue_color(hsv_frame, original_frame):
-    low_red = np.array([112, 100, 20])
-    high_red = np.array([129, 255, 255])
+    low_red   = np.array([112, 100, 20])
+    high_red  = np.array([129, 255, 255])
     blue_mask = cv2.inRange(hsv_frame, low_red, high_red)
     blue_mask = cv2.erode(blue_mask, kernel, iterations=2)
     blue_mask = cv2.morphologyEx(blue_mask, cv2.MORPH_OPEN, kernel)
@@ -50,11 +53,11 @@ def draw_area(frame):
 
 
 def draw_options(frame):
-    global option_color
-    cv2.putText(frame, '- Press a to write or stop', (50, 50), font, 1, option_color['a'], 2, cv2.LINE_AA)
-    cv2.putText(frame, '- Press c to clear screen', (50, 100), font, 1, option_color['c'], 2, cv2.LINE_AA)
-    cv2.putText(frame, '- Press s to save image', (50, 150), font, 1, option_color['s'], 2, cv2.LINE_AA)
-    cv2.putText(frame, '- Press p to predict', (50, 200), font, 1, option_color['p'], 2, cv2.LINE_AA)
+    global OPTION_COLORS
+    cv2.putText(frame, '- Press a to write or stop', (50, 50), font, 1, OPTION_COLORS['a'], 2, cv2.LINE_AA)
+    cv2.putText(frame, '- Press c to clear screen', (50, 100), font, 1, OPTION_COLORS['c'], 2, cv2.LINE_AA)
+    cv2.putText(frame, '- Press s to save image', (50, 150), font, 1, OPTION_COLORS['s'], 2, cv2.LINE_AA)
+    cv2.putText(frame, '- Press p to predict', (50, 200), font, 1, OPTION_COLORS['p'], 2, cv2.LINE_AA)
     cv2.putText(frame, '- Press q to exit', (50, 250), font, 1, (0, 155, 0), 2, cv2.LINE_AA)
     return frame
 
@@ -62,7 +65,7 @@ def draw_options(frame):
 def draw_save_count(frame):
     global count, show_count
     if (count is not None) and show_count:
-        cv2.putText(frame, 'image {} saved'.format(count), (250, 120), font, 1, (0, 255, 0), 1, cv2.LINE_AA)
+        cv2.putText(frame, 'image {} saved'.format(count), (50, 350), font, 1, (0, 240, 0), 2, cv2.LINE_AA)
     return frame
 
 
@@ -126,8 +129,8 @@ class DrawLetter:
 
 class PredictImage:
     def __init__(self):
-        self.class_labels = []
         self.index = None
+        self.class_labels = []
         self.predicted_image = None
 
     def predict_image(self, model_path, class_labels, clear_frame, image_to_save):
@@ -150,8 +153,6 @@ class PredictImage:
         image_path = image_path[-1] 
         image = cv2.imread(image_path, 0)
         image = cv2.resize(image, (128, 128))
-        # convert to gray scale if draw with hand
-        # if mode == "hand": image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         image = image.astype("float") / 255.0
         image = img_to_array(image)
         image = np.expand_dims(image, axis=0)
@@ -167,7 +168,8 @@ class PredictImage:
         self.index = self.index[0][0]
         label = self.class_labels[self.index]
         print(f'[INFO] you wrote {label}')
-        each_class_percentage = "kor-{:.2f}%, khor-{:.2f}%, kur-{:.2f}%, khur-{:.2f}%".format(percentage.item(0), percentage.item(1), percentage.item(2), percentage.item(3))
+        each_class_percentage = "kor-{:.2f}%, khor-{:.2f}%, kur-{:.2f}%, khur-{:.2f}%".format(percentage.item(0), percentage.item(1), 
+                                                                                              percentage.item(2), percentage.item(3))
         print(each_class_percentage)
 
     def draw_predict_label(self, frame):
@@ -186,7 +188,7 @@ def create_white_image(size=[300, 300]):
 def main():
     print("[INFO] accessing camera .... ")
     print("[INFO] opening camera .... ")
-    global i, count, key, play_frame, show_count,  option_color
+    global i, count, key, play_frame, show_count, OPTION_COLORS
     while True:
         ret, frame = capture.read()
         frame = cv2.flip(frame, 1)
@@ -202,8 +204,6 @@ def main():
         # drawing on air
         if args["mode"] == "color":
             DrawLetter().draw_with_color(frame, frame_clone, white_image)
-        # elif args["mode"] == "hand":
-        #     DrawLetter().draw_with_hand(frame, frame_clone, "model/hand_neural_net.hdf5")
 
         cv2.imshow("original", frame_clone)
         cv2.imshow("white", white_image)
@@ -212,34 +212,34 @@ def main():
 
         # keys events
         if key == ord('s'):
-            option_color['s'] = (0, 255, 0)
-            option_color['a'] = (0, 155, 0)
-            option_color['c'] = (0, 155, 0)
-            option_color['p'] = (0, 155, 0)
+            OPTION_COLORS['s'] = (0, 255, 0)
+            OPTION_COLORS['a'] = (0, 155, 0)
+            OPTION_COLORS['c'] = (0, 155, 0)
+            OPTION_COLORS['p'] = (0, 155, 0)
             show_count = True
-            save_images_path = "../khmer_letter_dataset/khmer_letters_air/original/5_ngur_original/ngur"
+            save_images_path = "../khmer_letter_dataset/khmer_letters_air/original/6_jor_original/jor"
             save_image("count_text/count.txt", clear_frame_clone, white_image, save_images_path)
         elif key == ord('p'):
-            option_color['p'] = (0, 255, 0)
-            option_color['s'] = (0, 155, 0)
-            option_color['a'] = (0, 155, 0)
-            option_color['c'] = (0, 155, 0)
+            OPTION_COLORS['p'] = (0, 255, 0)
+            OPTION_COLORS['s'] = (0, 155, 0)
+            OPTION_COLORS['a'] = (0, 155, 0)
+            OPTION_COLORS['c'] = (0, 155, 0)
             show_count = False
             model_path = "model/khmer_letters_on_air.hdf5"
             class_labels = ['kor', 'khor', 'kur', 'khur']
             predict = PredictImage()
             predict.predict_image(model_path, class_labels, clear_frame_clone, white_image)
         elif key == ord('a'):
-            option_color['a'] = (0, 255, 0)
-            option_color['c'] = (0, 155, 0)
-            option_color['p'] = (0, 155, 0)
-            option_color['s'] = (0, 155, 0)
+            OPTION_COLORS['a'] = (0, 255, 0)
+            OPTION_COLORS['c'] = (0, 155, 0)
+            OPTION_COLORS['p'] = (0, 155, 0)
+            OPTION_COLORS['s'] = (0, 155, 0)
             capture_drawing()
         elif key == ord('c'):
-            option_color['c'] = (0, 255, 0)
-            option_color['a'] = (0, 155, 0)
-            option_color['s'] = (0, 155, 0)
-            option_color['p'] = (0, 155, 0)
+            OPTION_COLORS['c'] = (0, 255, 0)
+            OPTION_COLORS['a'] = (0, 155, 0)
+            OPTION_COLORS['s'] = (0, 155, 0)
+            OPTION_COLORS['p'] = (0, 155, 0)
             for point in center_dots:
                 frame_clone = clear_frame_clone
                 center_dots.clear()

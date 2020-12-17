@@ -33,7 +33,8 @@ class ImageProcessing:
         cropped_image = image[image_layout['top']:(image_height - image_layout['bottom']), image_layout['left']:(image_width - image_layout['right'])]
         return cropped_image
 
-    def resize_image(self, size, channels, rename=False, new_name=None, file_type="jpg", crop_image=False, top=None, bottom=None, left=None, right=None, padding_color=0):
+    def resize_image(self, size, channels, rename=False, new_name=None, file_type="jpg",
+                     crop_image=False, top=None, bottom=None, left=None, right=None, padding_color=0):
         for (index, image_path) in enumerate(self.image_paths):
             padding = {'top': 0, 'bottom': 0, 'left': 0, 'right': 0}
             if channels != 3 and channels != 1:
@@ -48,8 +49,6 @@ class ImageProcessing:
             # check if user want to rename image during resizing
             if rename and (new_name is None):
                 raise Exception("rename is set to True but no new name provided")
-            elif rename and (new_name is not None):
-                self.rename_image(new_name, file_type)
 
             # check if user want to crop image during resizing
             if crop_image and ((top is None) or (bottom is None) or (left is None) or (right is None)):
